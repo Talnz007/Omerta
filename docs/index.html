@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Don's Celebration</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+        :root {
+            --blood-red: #8a0303;
+            --gold: #d4af37;
+            --dark-gold: #aa8c2c;
+            --bg-black: #050505;
+            --card-bg: #0f0f0f;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-black);
+            color: white;
+            font-family: 'Playfair Display', serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* --- CANVAS BACKGROUND (GOLD DUST) --- */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* --- SMOKE OVERLAY --- */
+        .smoke-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://i.imgur.com/8IuucQZ.png');
+            opacity: 0.2;
+            animation: smokeScroll 40s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        @keyframes smokeScroll { from { background-position: 0 0; } to { background-position: 0 -1000px; } }
+
+        /* --- ENTRY SCREEN --- */
+        #entry-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        #entry-screen h1 {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: clamp(2rem, 5vw, 4rem);
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            margin-bottom: 10px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-top: 30px;
+        }
+
+        input[type="password"] {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--blood-red);
+            color: white;
+            font-size: 1.5rem;
+            padding: 10px;
+            text-align: center;
+            font-family: 'Cinzel Decorative', cursive;
+            width: 250px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input[type="password"]:focus {
+            border-bottom: 2px solid var(--gold);
+            width: 300px;
+        }
+
+        .enter-btn {
+            margin-top: 30px;
+            background: var(--blood-red);
+            color: white;
+            border: 1px solid transparent;
+            padding: 12px 40px;
+            font-size: 1.2rem;
+            font-family: 'Cinzel Decorative', cursive;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 15px rgba(138, 3, 3, 0.3);
+        }
+
+        .enter-btn:hover {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            box-shadow: 0 0 20px var(--gold);
+        }
+
+        .error-msg {
+            color: red;
+            margin-top: 15px;
+            font-family: sans-serif;
+            font-size: 0.9rem;
+            height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* --- MAIN CONTENT --- */
+        #main-content {
+            display: none; /* Hidden initially */
+            position: relative;
+            z-index: 10;
+            padding-bottom: 50px;
+            opacity: 0; /* For fade in effect */
+            transition: opacity 2s;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .hero h2 {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: clamp(3rem, 8vw, 6rem);
+            background: linear-gradient(to bottom, var(--gold), var(--dark-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            line-height: 1;
+            filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3));
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            max-width: 700px;
+            color: #ccc;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        /* --- MESSAGE SECTION --- */
+        .message-container {
+            max-width: 800px;
+            margin: 0 auto 100px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .paper {
+            background: #1a1a1a;
+            border: 1px solid var(--gold);
+            padding: 40px;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            min-height: 200px;
+            display: none; /* Hidden until button click */
+        }
+
+        .paper::before {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .typewriter-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: #fff;
+            line-height: 1.8;
+            font-style: italic;
+        }
+
+        /* --- CARDS SECTION --- */
+        .crew-title {
+            text-align: center;
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 50px;
+        }
+
+        .cards-grid {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 40px;
+            padding: 20px;
+        }
+
+        .card {
+            width: 300px;
+            background: var(--card-bg);
+            border: 1px solid #333;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-15px);
+            border-color: var(--blood-red);
+            box-shadow: 0 10px 30px rgba(138, 3, 3, 0.2);
+        }
+
+        .card-img-box {
+            width: 100%;
+            height: 350px;
+            overflow: hidden;
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%) contrast(120%);
+            transition: 0.5s;
+        }
+
+        .card:hover img {
+            filter: grayscale(0%) contrast(100%);
+            transform: scale(1.1);
+        }
+
+        .card-content {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .card h3 {
+            font-family: 'Cinzel Decorative', cursive;
+            color: var(--gold);
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        /* --- UTILITY ANIMATIONS --- */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="gunshot" src="https://www.fesliyanstudios.com/play-mp3/387"></audio>
+    <audio id="bg-music" loop src="https://cdn.pixabay.com/download/audio/2023/03/13/audio_4fb985d8b2.mp3?filename=the-godfather-theme-135365.mp3"></audio>
+
+    <div id="canvas-container"><canvas id="gold-dust"></canvas></div>
+    
+    <div class="smoke-overlay"></div>
+
+    <div id="entry-screen">
+        <h1>Omertà</h1>
+        <p style="color: #888; letter-spacing: 1px;">THE CODE OF SILENCE</p>
+        
+        <div class="input-group">
+            <input type="password" id="pass" placeholder="PASSWORD" autocomplete="off">
+        </div>
+        <button class="enter-btn" onclick="attemptUnlock()">Prove Loyalty</button>
+        <div id="error-msg" class="error-msg">Incorrect. You are not family.</div>
+    </div>
+
+    <div id="main-content">
+        
+        <div class="hero">
+            <h2>Happy Birthday<br>Don</h2>
+            <p>Respect is earned. Loyalty is returned. Power is taken.<br>Today, the family celebrates your reign.</p>
+            <button class="enter-btn" onclick="revealLetter()" id="reveal-btn">Read The Briefing</button>
+        </div>
+
+        <div class="message-container">
+            <div class="paper" id="letter-paper">
+                <p id="typewriter-target" class="typewriter-text"></p>
+            </div>
+        </div>
+
+        <h2 class="crew-title">The Inner Circle</h2>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-img-box">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80" alt="The Don">
+                </div>
+                <div class="card-content">
+                    <h3>The Don</h3>
+                    <p>Calculated. Respected. The Visionary.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-img-box">
+                    <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80" alt="Right Hand">
+                </div>
+                <div class="card-content">
+                    <h3>The Underboss</h3>
+                    <p>Executes the will of the Don without question.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-img-box">
+                    <img src="https://images.unsplash.com/photo-1488161628813-994252600322?auto=format&fit=crop&w=800&q=80" alt="Enforcer">
+                </div>
+                <div class="card-content">
+                    <h3>The Enforcer</h3>
+                    <p>When words fail, he is the solution.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 50px; color: #555; font-size: 0.8rem;">
+            &copy; THE FAMILY BUSINESS 2025
+        </div>
+    </div>
+
+    <script>
+        /* --- CONFIGURATION --- */
+        const PASSWORD = "helper99";
+        const MESSAGE_TEXT = "Brother... on this day, we do not just count years, we count victories. You have led with wisdom and fought with honor. May your enemies fall, your wealth grow, and your family remain united. Today, the city is yours. Happy Birthday.";
+
+        /* --- UNLOCK LOGIC --- */
+        const passInput = document.getElementById('pass');
+        const errorMsg = document.getElementById('error-msg');
+        const entryScreen = document.getElementById('entry-screen');
+        const mainContent = document.getElementById('main-content');
+        const bgMusic = document.getElementById('bg-music');
+        const gunshot = document.getElementById('gunshot');
+
+        // Allow Enter Key
+        passInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") attemptUnlock();
+        });
+
+        function attemptUnlock() {
+            if(passInput.value === PASSWORD) {
+                // Success
+                gunshot.volume = 0.6;
+                gunshot.play().catch(e => console.log(e));
+                bgMusic.volume = 0.5;
+                
+                // Fade out entry
+                entryScreen.style.opacity = '0';
+                
+                setTimeout(() => {
+                    entryScreen.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    
+                    // Trigger Reflow to restart CSS animation for fade-in
+                    void mainContent.offsetWidth; 
+                    mainContent.style.opacity = '1';
+
+                    bgMusic.play().catch(e => console.log("Click interaction needed for music"));
+                }, 1500);
+
+            } else {
+                // Failure
+                errorMsg.style.opacity = '1';
+                passInput.classList.add('shake');
+                setTimeout(() => passInput.classList.remove('shake'), 500);
+            }
+        }
+
+        /* --- TYPEWRITER EFFECT --- */
+        let typeIndex = 0;
+        function revealLetter() {
+            const btn = document.getElementById('reveal-btn');
+            const paper = document.getElementById('letter-paper');
+            const target = document.getElementById('typewriter-target');
+            
+            btn.style.display = 'none'; // Hide button
+            paper.style.display = 'block'; // Show paper
+
+            // Scroll slightly
+            paper.scrollIntoView({behavior: "smooth", block: "center"});
+
+            function type() {
+                if (typeIndex < MESSAGE_TEXT.length) {
+                    target.innerHTML += MESSAGE_TEXT.charAt(typeIndex);
+                    typeIndex++;
+                    setTimeout(type, 40); // Typing speed
+                }
+            }
+            type();
+        }
+
+        /* --- GOLD DUST PARTICLE SYSTEM --- */
+        const canvas = document.getElementById('gold-dust');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5; // Tiny specks
+                this.speedY = Math.random() * 0.5 + 0.2; // Floating up
+                this.opacity = Math.random() * 0.8;
+            }
+            update() {
+                this.y -= this.speedY;
+                if (this.y < 0) {
+                    this.y = canvas.height;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(212, 175, 55, ${this.opacity})`; // Gold color
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+
+    </script>
+</body>
+</html>
